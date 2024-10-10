@@ -5,6 +5,8 @@ export default function Home() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [permalink, setPermalink] = useState(null);
+  const [message, setMessage] = useState(""); // Novo estado para a mensagem
 
   const handleVerify = async () => {
     setLoading(true); // Ativa o loading
@@ -18,10 +20,13 @@ export default function Home() {
 
     // Verifica se a resposta contém requisições
     if (Array.isArray(data.requisitions)) {
-      // Corrigido para requisitions
       setResults(data.requisitions); // Atualiza o estado com as requisições
+      setPermalink(data.permalink); // Atualiza o permalink
+      setMessage(""); // Limpa a mensagem
     } else {
       setResults([]); // Reseta os resultados se não houver requisições
+      setPermalink(data.permalink); // Mantém o permalink
+      setMessage(data.message); // Define a mensagem
     }
   };
 
@@ -53,6 +58,17 @@ export default function Home() {
       <button className="button toggle" onClick={toggleDarkMode}>
         {darkMode ? "Modo Claro" : "Modo Escuro"}
       </button>
+
+      {/* Exibindo mensagem de status e permalink */}
+      {message && <div className="message">{message}</div>}
+      {permalink && (
+        <div className="permalink">
+          <strong>Permalink encontrado:</strong>{" "}
+          <a href={permalink} target="_blank" rel="noopener noreferrer">
+            {permalink}
+          </a>
+        </div>
+      )}
 
       {results.length > 0 && (
         <div className="results">

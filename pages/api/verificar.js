@@ -14,34 +14,37 @@ export default async function handler(req, res) {
     await page.goto(url, { waitUntil: "networkidle2" });
 
     // Aqui, você pode esperar um pouco para garantir que as requisições tenham sido feitas
-    await page.waitForSelector("body", { timeout: 5000 }); // Espera até que o corpo da página esteja carregado
+    await page.waitForSelector("body", { timeout: 5000 });
 
     // Captura as requisições
-    const requisições = [];
+    const requisitions = [];
     page.on("request", (request) => {
-      const reqUrl = request.url(); // Mudei a variável para reqUrl para não colidir
-      if (reqUrl.includes("static.sizebay")) {
-        requisições.push({
-          url: reqUrl,
+      const url = request.url();
+      if (url.includes("static.sizebay")) {
+        requisitions.push({
+          url,
           method: request.method(),
-          headers: request.headers(), // Captura os headers da requisição
         });
-        console.log("Requisição capturada:", reqUrl); // Adicione isto para log
       }
     });
 
-    // Realiza a requisição e espera até que as requisições estejam concluídas
+    const permalink = await page.evaluate(() => {
+      if (window.SizebayPrescript) {
+        return window.SizebayPrescript().getPermalink();
+      }
+      return null;
+    });
+
     await page.evaluate(
       () => new Promise((resolve) => setTimeout(resolve, 5000))
-    ); // Aguarda 5 segundos
+    );
 
-    // Verifica se foram encontradas requisições
-    if (requisições.length > 0) {
-      res.status(200).json({ requisitions: requisições }); // Retorna como 'requisitions'
+    if (requisitions.length > 0) {
+      res.status(200).json({ requisitions, permalink });
     } else {
       res
         .status(200)
-        .json({ message: "Nenhuma requisição Sizebay encontrada." });
+        .json({ message: "Nenhuma requisição Sizebay encontrada.", permalink });
     }
   } catch (error) {
     console.error("Erro ao verificar:", error);
