@@ -3,19 +3,25 @@ import { useState, useEffect } from "react";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
   const handleVerify = async () => {
+    setLoading(true); // Ativa o loading
     const response = await fetch(
       `/api/verificar?url=${encodeURIComponent(url)}`
     );
     const data = await response.json();
+    console.log(data); // Log para verificar a resposta
 
-    // Acesse a chave correta 'requisitions'
+    setLoading(false); // Desativa o loading
+
+    // Verifica se a resposta contém requisições
     if (Array.isArray(data.requisitions)) {
-      setResults(data.requisitions);
+      // Corrigido para requisitions
+      setResults(data.requisitions); // Atualiza o estado com as requisições
     } else {
-      setResults([]);
+      setResults([]); // Reseta os resultados se não houver requisições
     }
   };
 
@@ -41,12 +47,13 @@ export default function Home() {
         onChange={(e) => setUrl(e.target.value)}
         placeholder="Digite a URL do e-commerce"
       />
-      <button className="button" onClick={handleVerify}>
-        Verificar
+      <button className="button" onClick={handleVerify} disabled={loading}>
+        {loading ? "Verificando..." : "Verificar"}
       </button>
       <button className="button toggle" onClick={toggleDarkMode}>
         {darkMode ? "Modo Claro" : "Modo Escuro"}
       </button>
+
       {results.length > 0 && (
         <div className="results">
           <h2>Requisições encontradas:</h2>
@@ -60,6 +67,9 @@ export default function Home() {
             </div>
           ))}
         </div>
+      )}
+      {results.length === 0 && !loading && (
+        <div className="no-results">Nenhuma requisição encontrada.</div>
       )}
     </div>
   );
