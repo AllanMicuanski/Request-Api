@@ -59,14 +59,6 @@ export default async function handler(req, res) {
             "Identificado Google Tag Manager: prescript.js encontrado."
           );
         }
-
-        // Verificação de script Sizebay (sizebay-tracker)
-        if (requestUrl.includes("sizebay.sizebay-tracker")) {
-          deploymentStatus.script = true;
-          console.log(
-            "Script Sizebay identificado: sizebay-tracker encontrado."
-          );
-        }
       }
     });
 
@@ -80,6 +72,15 @@ export default async function handler(req, res) {
         ? window.SizebayPrescript().getPermalink()
         : null;
     });
+
+    // Nova verificação do script baseado no permalink
+    if (permalink && !deploymentStatus.gtm && !deploymentStatus.vtexIO) {
+      deploymentStatus.script = true;
+      deploymentStatus.vtexIO = false;
+      deploymentStatus.gtm = false;
+
+      console.log("Existe permalink então é Script");
+    }
 
     console.log("Requisições capturadas. Respondendo...");
 
