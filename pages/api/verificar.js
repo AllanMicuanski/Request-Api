@@ -8,23 +8,41 @@ export default async function handler(req, res) {
   }
 
   let browser;
+  const deploymentStatus = {
+    script: false,
+    gtm: false,
+    vtexIO: false,
+  };
+
   try {
     browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
 
-    // Aqui, você pode esperar um pouco para garantir que as requisições tenham sido feitas
+    // Espera um pouco para garantir que as requisições tenham sido feitas
     await page.waitForSelector("body", { timeout: 5000 });
 
     // Captura as requisições
     const requisitions = [];
     page.on("request", (request) => {
-      const url = request.url();
-      if (url.includes("static.sizebay")) {
+      const requestUrl = request.url();
+      if (requestUrl.includes("static.sizebay")) {
         requisitions.push({
-          url,
+          url: requestUrl,
           method: request.method(),
         });
+
+        // Verificando o método de implantação
+        if (requestUrl.includes("sizebay.sizebay-tracker")) {
+          deploymentStatus.script = true;
+        }
+        if (requestUrl.includes("vtex.assets")) {
+          deploymentStatus.vtexIO = true;
+        }
+        // Para GTM, você pode usar a lógica do request initiator chain
+        if (request.redirectedFrom()) {
+          deploymentStatus.gtm = true;
+        }
       }
     });
 
@@ -40,11 +58,21 @@ export default async function handler(req, res) {
     );
 
     if (requisitions.length > 0) {
-      res.status(200).json({ requisitions, permalink });
+      res.status(200).json({
+        requisitions,
+        permalink,
+        scriptStatus: deploymentStatus.script,
+        gtmStatus: deploymentStatus.gtm,
+        vtexIOStatus: deploymentStatus.vtexIO,
+      });
     } else {
-      res
-        .status(200)
-        .json({ message: "Nenhuma requisição Sizebay encontrada.", permalink });
+      res.status(200).json({
+        message: "Nenhuma requisição Sizebay encontrada.",
+        permalink,
+        scriptStatus: deploymentStatus.script,
+        gtmStatus: deploymentStatus.gtm,
+        vtexIOStatus: deploymentStatus.vtexIO,
+      });
     }
   } catch (error) {
     console.error("Erro ao verificar:", error);

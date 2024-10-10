@@ -6,27 +6,38 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [permalink, setPermalink] = useState(null);
-  const [message, setMessage] = useState(""); // Novo estado para a mensagem
+  const [message, setMessage] = useState("");
+  const [deploymentStatus, setDeploymentStatus] = useState({
+    script: false,
+    gtm: false,
+    vtexIO: false,
+  });
 
   const handleVerify = async () => {
-    setLoading(true); // Ativa o loading
+    setLoading(true);
     const response = await fetch(
       `/api/verificar?url=${encodeURIComponent(url)}`
     );
     const data = await response.json();
-    console.log(data); // Log para verificar a resposta
+    console.log(data);
 
-    setLoading(false); // Desativa o loading
+    setLoading(false);
 
-    // Verifica se a resposta contém requisições
     if (Array.isArray(data.requisitions)) {
-      setResults(data.requisitions); // Atualiza o estado com as requisições
-      setPermalink(data.permalink); // Atualiza o permalink
-      setMessage(""); // Limpa a mensagem
+      setResults(data.requisitions);
+      setPermalink(data.permalink);
+      setMessage("");
+      // Atualizando o status de implantação com base nas requisições
+      setDeploymentStatus((prevStatus) => ({
+        ...prevStatus,
+        script: data.scriptStatus,
+        gtm: data.gtmStatus,
+        vtexIO: data.vtexIOStatus,
+      }));
     } else {
-      setResults([]); // Reseta os resultados se não houver requisições
-      setPermalink(data.permalink); // Mantém o permalink
-      setMessage(data.message); // Define a mensagem
+      setResults([]);
+      setPermalink(data.permalink);
+      setMessage(data.message);
     }
   };
 
@@ -78,15 +89,20 @@ export default function Home() {
               <strong>URL:</strong> {req.url}
               <br />
               <strong>Método:</strong> {req.method}
-              <br />
-              <strong>Headers:</strong> {JSON.stringify(req.headers)}
             </div>
           ))}
         </div>
       )}
-      {results.length === 0 && !loading && (
-        <div className="no-results">Nenhuma requisição encontrada.</div>
-      )}
+
+      {/* Exibindo status de implantação */}
+      <div className="deployment-status">
+        <h3>Status de Implantação:</h3>
+        <ul>
+          <li>Script: {deploymentStatus.script ? "✅" : "❌"}</li>
+          <li>GTM: {deploymentStatus.gtm ? "✅" : "❌"}</li>
+          <li>VTEX IO: {deploymentStatus.vtexIO ? "✅" : "❌"}</li>
+        </ul>
+      </div>
     </div>
   );
 }
